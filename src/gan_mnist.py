@@ -76,6 +76,50 @@ def get_mnist_dataloader(
     return dataloader
 
 
+class Generator(nn.Module):
+    """
+    Fully connected Generator network for MNIST digit generation.
+    
+    Architecture:
+      - Input: Latent noise vector z in R^{latent_dim} (default: 100)
+      - Linear(latent_dim, 256) -> LeakyReLU(0.2)
+      - Linear(256, 512) -> LeakyReLU(0.2)
+      - Linear(512, 1024) -> LeakyReLU(0.2)
+      - Linear(1024, 784) -> Tanh()
+      - Output: Reshaped tensor of shape [batch_size, 1, 28, 28] with values in [-1, 1]
+    """
+    def __init__(self, latent_dim: int = 100, img_shape: Tuple[int, int, int] = (1, 28, 28)):
+        super().__init__()
+        self.latent_dim = latent_dim
+        self.img_shape = img_shape
+        out_features = int(np.prod(img_shape))  # 1 * 28 * 28 = 784
+        
+        self.model = nn.Sequential(
+            nn.Linear(latent_dim, 256),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(256, 512),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(512, 1024),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Linear(1024, out_features),
+            nn.Tanh()
+        )
+        self.apply(init_weights)
+
+    def forward(self, z: torch.Tensor) -> torch.Tensor:
+        """Forward pass generating images from latent noise vectors."""
+        img_flat = self.model(z)
+        return img_flat.view(img_flat.size(0), *self.img_shape)
+
+
+def init_weights(m: nn.Module) -> None:
+    """Initialize linear layer weights with normal distribution and zero biases."""
+    if isinstance(m, nn.Linear):
+        nn.init.normal_(m.weight.data, 0.0, 0.02)
+        if m.bias is not None:
+            nn.init.constant_(m.bias.data, 0.0)
+
+
 if __name__ == "__main__":
     device = get_device()
     print(f"Active Device: {device}")
@@ -84,3 +128,11 @@ if __name__ == "__main__":
     images, labels = next(iter(loader))
     print(f"Loaded batch shape: {images.shape}")
     print(f"Value range: min={images.min().item():.3f}, max={images.max().item():.3f}")
+    
+    # Test Generator
+    gen = Generator(latent_dim=100).to(device)
+    z = torch.randn(64, 100, device=device)
+    gen_imgs = gen(z)
+    print(f"Generated images shape: {gen_imgs.shape}")
+    print(f"Generator value range: min={gen_imgs.min().item():.3f}, max={gen_imgs.max().item():.3f}")
+
