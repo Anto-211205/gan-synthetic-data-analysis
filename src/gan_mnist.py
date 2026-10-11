@@ -112,6 +112,40 @@ class Generator(nn.Module):
         return img_flat.view(img_flat.size(0), *self.img_shape)
 
 
+class Discriminator(nn.Module):
+    """
+    Fully connected Discriminator network for MNIST digit classification.
+    
+    Architecture:
+      - Input: Image tensor [batch_size, 1, 28, 28] -> Flatten to 784 features
+      - Linear(784, 512) -> LeakyReLU(0.2) -> Dropout(0.3)
+      - Linear(512, 256) -> LeakyReLU(0.2) -> Dropout(0.3)
+      - Linear(256, 1) -> Sigmoid()
+      - Output: Real/Fake probability score in [0, 1] of shape [batch_size, 1]
+    """
+    def __init__(self, img_shape: Tuple[int, int, int] = (1, 28, 28)):
+        super().__init__()
+        self.img_shape = img_shape
+        in_features = int(np.prod(img_shape))  # 784
+        
+        self.model = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features, 512),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Dropout(0.3),
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2, inplace=True),
+            nn.Dropout(0.3),
+            nn.Linear(256, 1),
+            nn.Sigmoid()
+        )
+        self.apply(init_weights)
+
+    def forward(self, img: torch.Tensor) -> torch.Tensor:
+        """Forward pass returning probability that input image is real."""
+        return self.model(img)
+
+
 def init_weights(m: nn.Module) -> None:
     """Initialize linear layer weights with normal distribution and zero biases."""
     if isinstance(m, nn.Linear):
@@ -135,4 +169,12 @@ if __name__ == "__main__":
     gen_imgs = gen(z)
     print(f"Generated images shape: {gen_imgs.shape}")
     print(f"Generator value range: min={gen_imgs.min().item():.3f}, max={gen_imgs.max().item():.3f}")
+    
+    # Test Discriminator
+    disc = Discriminator().to(device)
+    real_preds = disc(images.to(device))
+    fake_preds = disc(gen_imgs)
+    print(f"Discriminator output shape on real: {real_preds.shape}")
+    print(f"Real score range: min={real_preds.min().item():.3f}, max={real_preds.max().item():.3f}")
+    print(f"Fake score range: min={fake_preds.min().item():.3f}, max={fake_preds.max().item():.3f}")
 
