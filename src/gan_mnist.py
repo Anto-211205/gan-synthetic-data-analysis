@@ -486,7 +486,7 @@ def train_gan(config: GANConfig) -> Dict[str, List[float]]:
                     grid_size=(5, 5),
                     title=f"MNIST GAN - Epoch {epoch} (D_loss={avg_d_loss:.3f}, G_loss={avg_g_loss:.3f})"
                 )
-                print(f"  [Checkpoint Saved] {chkpt_path}")
+                print(f"  [Checkpoint Saved] {chkpt_path}", flush=True)
                 
         # Append metrics to CSV
         with open(metrics_csv_path, "a", newline="", encoding="utf-8") as f:
@@ -505,7 +505,8 @@ def train_gan(config: GANConfig) -> Dict[str, List[float]]:
             f"Epoch [{epoch:02d}/{config.epochs:02d}] "
             f"Loss_D: {avg_d_loss:.4f} | Loss_G: {avg_g_loss:.4f} | "
             f"D(x): {avg_d_real:.3f} | D(G(z)): {avg_d_fake:.3f} | "
-            f"Pixel_Div: {pixel_div:.4f} | Pairwise_RMS: {pairwise_dist:.4f}"
+            f"Pixel_Div: {pixel_div:.4f} | Pairwise_RMS: {pairwise_dist:.4f}",
+            flush=True
         )
         
     elapsed_time = time.time() - start_time
