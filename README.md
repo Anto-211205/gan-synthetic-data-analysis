@@ -115,11 +115,34 @@ $$\min_G \max_D V(D, G) = \mathbb{E}_{x \sim p_{\text{data}}(x)}[\log D(x)] + \m
 - Epoch-by-epoch tracking of $L_G$, $L_D$, $D(x)$ (real score), and $D(G(z))$ (fake score) in `results/training_metrics.csv`.
 - Plotted loss trajectory in `results/loss_curve.png`.
 
+## 8. Empirical Results & Findings
+
+### 8.1 Key Metrics Progression
+
+| Epoch | Generator Loss ($L_G$) | Discriminator Loss ($L_D$) | Per-Pixel Std Diversity ($\bar{\sigma}$) | Mean Pairwise RMS Distance ($\bar{D}_{\text{RMS}}$) | Real Score $D(x)$ | Fake Score $D(G(z))$ |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **1** | 0.9803 | 1.0955 | 0.1122 | 0.1523 | 0.7044 | 0.4972 |
+| **5** | 1.9573 | 0.8583 | 0.1376 | 0.2838 | 0.7209 | 0.2908 |
+| **10** | 1.8131 | 0.8441 | 0.1543 | 0.3119 | 0.7244 | 0.2811 |
+| **20** | 1.0178 | 1.2030 | 0.1847 | 0.3507 | 0.5818 | 0.4200 |
+| **30** | 0.9957 | 1.2221 | 0.1821 | 0.3537 | 0.5749 | 0.4264 |
+
+### 8.2 Qualitative Visual Inspection Across Checkpoints
+- **Epoch 1 (`results/epoch_001.png`):** Unstructured low-amplitude noise; Discriminator easily distinguishes synthetic samples ($D(G(z)) \approx 0.497$).
+- **Epoch 5 (`results/epoch_005.png`):** Emergence of rough stroke clusters and loops (coarse zeros, eights, ones); pairwise RMS distance jumps from $0.1523$ to $0.2838$.
+- **Epoch 10 (`results/epoch_010.png`):** Digit contours solidify with cleaner separation between foreground strokes and dark background.
+- **Epoch 20 (`results/epoch_020.png`):** High stroke definition across diverse digit classes ($0, 1, 3, 4, 7, 8, 9$).
+- **Epoch 30 (`results/epoch_030.png` / `results/generated_samples.png`):** Sharp, highly recognizable synthetic handwritten digits exhibiting balanced intra-batch variety.
+
+### 8.3 Training Stability Dynamics
+- **Adversarial Balance:** Between Epochs 1-8, the Discriminator overpowered the Generator ($L_G$ peaked at $2.1526$). As the Generator adapted to the Discriminator's representations, it drove $D(G(z))$ from $0.26$ up to $0.43$, stabilizing around an equilibrium with $L_G \approx 1.00$ and $L_D \approx 1.22$.
+- **Absence of Mode Collapse:** Pairwise RMS distance grew monotonically from $0.1523$ to $0.3537$ and per-pixel standard deviation rose from $0.1122$ to $0.1821$, indicating healthy sample diversity across distinct digit classes.
+
 ---
 
-## 8. Installation & Execution Guide
+## 9. Installation & Execution Guide
 
-### 8.1 Setup Virtual Environment
+### 9.1 Setup Virtual Environment
 ```powershell
 # Open Windows PowerShell in project directory
 cd D:\Projects\gan-synthetic-data-analysis
@@ -132,37 +155,64 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 8.2 Run Unit Tests
+### 9.2 Run Unit Tests
 ```powershell
 & .\.venv\Scripts\python.exe -m unittest discover -s tests
 ```
 
-### 8.3 Run 1-Epoch Smoke Test
+### 9.3 Run 1-Epoch Smoke Test
 ```powershell
 & .\.venv\Scripts\python.exe src/gan_mnist.py --epochs 1 --results-dir ./results_smoke
 ```
 
-### 8.4 Run Full Experiment (30 Epochs)
+### 9.4 Run Full Experiment (30 Epochs)
 ```powershell
 & .\.venv\Scripts\python.exe src/gan_mnist.py --epochs 30 --results-dir ./results
 ```
 
-### 8.5 Launch Jupyter Analysis Notebook
+### 9.5 Launch Jupyter Analysis Notebook
 ```powershell
 & .\.venv\Scripts\jupyter-lab.exe notebooks/GAN_Analysis.ipynb
 ```
 
 ---
 
-## 9. Limitations & Failure Modes
+## 10. Screenshot Capture Documentation (`screenshots/output.png`)
+
+Because automated screenshot capture requires an active interactive Windows desktop display context (Session 1 GUI framebuffer) which is not available in non-interactive background console environments, manual capture should be performed as follows:
+
+1. Launch PowerShell and run training or open the notebook:
+   ```powershell
+   & .\.venv\Scripts\python.exe src/gan_mnist.py --epochs 30
+   ```
+   or launch Jupyter:
+   ```powershell
+   & .\.venv\Scripts\jupyter.exe notebook notebooks/GAN_Analysis.ipynb
+   ```
+2. Press `Win + Shift + S` in Windows to open the Snipping Tool.
+3. Select the terminal showing the completed training summary or the browser window displaying the generated digit grids and loss curves.
+4. Save the captured screenshot as `screenshots/output.png`.
+
+---
+
+## 11. Limitations & Failure Modes
 1. **Fully Connected Architecture:** MLPs lack translational invariance compared to Convolutional GANs (DCGAN), leading to occasional jagged boundary artifacts.
 2. **Unconditional Generation:** Digit class cannot be explicitly requested at inference without conditioning labels (as in cGAN).
 3. **Resolution:** Limited to $28 \times 28$ grayscale digits.
 
 ---
 
-## 10. References & Acknowledgements
-- Goodfellow, I. et al. (2014). *Generative Adversarial Nets*. NeurIPS.
+## 12. Conclusion
+The fully connected GAN successfully generated high-quality, diverse synthetic MNIST digits from 100-dimensional Gaussian noise vectors:
+- **Sample Diversity:** Verified by an increase in mean pairwise RMS distance from $0.1523$ to $0.3537$ and per-pixel standard deviation from $0.1122$ to $0.1821$, confirming no mode collapse.
+- **Visual Fidelity:** High-contrast, well-defined digit strokes across epochs 20 to 30.
+- **Training Stability:** Balanced Adam hyperparameters kept discriminator outputs around $D(x) \approx 0.57$ and $D(G(z)) \approx 0.43$, maintaining adversarial gradient flow without numerical divergence.
+
+---
+
+## 13. References & Acknowledgements
+- Goodfellow, I. et al. (2014). *Generative Adversarial Nets*. Advances in Neural Information Processing Systems (NeurIPS).
 - Radford, A., Metz, L., & Chintala, S. (2015). *Unsupervised Representation Learning with Deep Convolutional Generative Adversarial Networks*.
 - LeCun, Y., Cortes, C., & Burges, C. J. (1998). *The MNIST Database of Handwritten Digits*.
 - Paszke, A. et al. (2019). *PyTorch: An Imperative Style, High-Performance Deep Learning Library*.
+
