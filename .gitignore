@@ -1,8 +1,16 @@
-@"
+# Python Virtual Environment
 .venv/
+venv/
+ENV/
+
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+*$py.class
+
+# Jupyter Notebook checkpoints
 .ipynb_checkpoints/
+
+# Dataset downloads (keep directory tracked via .gitkeep)
 dataset/*
 !dataset/.gitkeep
-"@ | Set-Content .gitignore
